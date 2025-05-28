@@ -208,6 +208,50 @@ class MainWindow(QMainWindow):
         length_layout.addWidget(self.length_spin)
         pendulum_layout.addLayout(length_layout)
         
+        # Massa do carrinho
+        cart_mass_layout = QHBoxLayout()
+        cart_mass_label = QLabel("Massa do Carrinho:")
+        self.cart_mass_spin = QDoubleSpinBox()
+        self.cart_mass_spin.setRange(0.1, 20.0)
+        self.cart_mass_spin.setValue(1.0)
+        self.cart_mass_spin.setSingleStep(0.1)
+        cart_mass_layout.addWidget(cart_mass_label)
+        cart_mass_layout.addWidget(self.cart_mass_spin)
+        pendulum_layout.addLayout(cart_mass_layout)
+
+        # Gravidade
+        gravity_layout = QHBoxLayout()
+        gravity_label = QLabel("Gravidade:")
+        self.gravity_spin = QDoubleSpinBox()
+        self.gravity_spin.setRange(1.0, 20.0)
+        self.gravity_spin.setValue(9.81)
+        self.gravity_spin.setSingleStep(0.1)
+        gravity_layout.addWidget(gravity_label)
+        gravity_layout.addWidget(self.gravity_spin)
+        pendulum_layout.addLayout(gravity_layout)
+
+        # Momento de inércia
+        inertia_layout = QHBoxLayout()
+        inertia_label = QLabel("Inércia (opcional):")
+        self.inertia_spin = QDoubleSpinBox()
+        self.inertia_spin.setRange(0.0, 100.0)
+        self.inertia_spin.setValue(0.0)
+        self.inertia_spin.setSingleStep(0.1)
+        inertia_layout.addWidget(inertia_label)
+        inertia_layout.addWidget(self.inertia_spin)
+        pendulum_layout.addLayout(inertia_layout)
+
+        # Passo de tempo (dt)
+        dt_layout = QHBoxLayout()
+        dt_label = QLabel("Passo de Tempo (dt):")
+        self.dt_spin = QDoubleSpinBox()
+        self.dt_spin.setRange(0.001, 0.1)
+        self.dt_spin.setValue(0.01)
+        self.dt_spin.setSingleStep(0.001)
+        dt_layout.addWidget(dt_label)
+        dt_layout.addWidget(self.dt_spin)
+        pendulum_layout.addLayout(dt_layout)
+        
         # Botões de controle
         self.start_button = QPushButton("Iniciar")
         self.stop_button = QPushButton("Parar")
@@ -254,15 +298,24 @@ class MainWindow(QMainWindow):
         self.elite_spin.valueChanged.connect(self.update_controller_params)
         self.mass_spin.valueChanged.connect(self.update_simulation_params)
         self.length_spin.valueChanged.connect(self.update_simulation_params)
+        self.cart_mass_spin.valueChanged.connect(self.update_simulation_params)
+        self.gravity_spin.valueChanged.connect(self.update_simulation_params)
+        self.dt_spin.valueChanged.connect(self.update_simulation_params)
+        self.inertia_spin.valueChanged.connect(self.update_simulation_params)
         
         # Inicializa o sistema
         self.initialize_systems()
         
     def initialize_systems(self):
         """Inicializa os sistemas de simulação e controle"""
+        inertia_value = self.inertia_spin.value() if self.inertia_spin.value() > 0 else None
         self.simulation = PendulumSimulation(
             mass=self.mass_spin.value(),
-            length=self.length_spin.value()
+            length=self.length_spin.value(),
+            cart_mass=self.cart_mass_spin.value(),
+            gravity=self.gravity_spin.value(),
+            dt=self.dt_spin.value(),
+            inertia=inertia_value
         )
         self.change_controller(self.controller_combo.currentText())
         
@@ -325,6 +378,14 @@ class MainWindow(QMainWindow):
         if self.simulation:
             self.simulation.mass = self.mass_spin.value()
             self.simulation.length = self.length_spin.value()
+            self.simulation.cart_mass = self.cart_mass_spin.value()
+            self.simulation.gravity = self.gravity_spin.value()
+            self.simulation.dt = self.dt_spin.value()
+            inertia_value = self.inertia_spin.value()
+            if inertia_value > 0:
+                self.simulation.inertia = inertia_value
+            else:
+                self.simulation.inertia = self.simulation.mass * self.simulation.length ** 2
             
     def start_simulation(self):
         """Inicia a simulação"""
